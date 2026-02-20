@@ -1,0 +1,51 @@
+<idea-plugin>
+    <id>com.smartcommit</id>
+    <name>Smart Commit</name>
+    <vendor email="support@smartcommit.dev" url="https://github.com/smart-commit/smart-commit-plugin">
+        Smart Commit
+    </vendor>
+
+    <description><![CDATA[
+        <h2>Smart Commit — AI-Powered Git Commit Message Generator</h2>
+        <p>Automatically generate professional, meaningful Git commit messages by analyzing your staged changes.</p>
+        <ul>
+            <li><b>AI-Powered:</b> Uses OpenAI (GPT-4o) or Ollama (local LLM) to generate context-aware messages</li>
+            <li><b>Template-Based:</b> Deterministic fallback using file paths, change types, and classification</li>
+            <li><b>Convention Support:</b> Gitmoji, Conventional Commits, or free-form formatting</li>
+            <li><b>Privacy-Friendly:</b> Use Ollama for fully local generation — no data leaves your machine</li>
+            <li><b>One-Click or Auto:</b> Generate on demand via button/shortcut, or automatically on commit dialog open</li>
+        </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <checkinHandlerFactory
+                implementation="com.smartcommit.checkin.SmartCommitHandlerFactory"/>
+
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.smartcommit.settings.SmartCommitConfigurable"
+                id="com.smartcommit.settings"
+                displayName="Smart Commit"/>
+
+        <applicationService
+                serviceImplementation="com.smartcommit.settings.SmartCommitSettings"/>
+
+        <notificationGroup
+                id="Smart Commit"
+                displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <action id="SmartCommit.Generate"
+                class="com.smartcommit.actions.GenerateCommitMessageAction"
+                text="Generate Commit Message"
+                description="Analyze staged changes and generate a commit message"
+                icon="AllIcons.Actions.Lightning">
+            <add-to-group group-id="Vcs.MessageActionGroup" anchor="first"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="alt G"/>
+        </action>
+    </actions>
+</idea-plugin>
