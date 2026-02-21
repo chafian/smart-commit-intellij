@@ -27,16 +27,15 @@ dependencies {
         bundledPlugin("Git4Idea")
 
         pluginVerifier()
-        instrumentationTools()
     }
 
     implementation(libs.okhttp)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.kotlinx.coroutines.swing)
+    // Note: kotlinx-coroutines is bundled with IntelliJ Platform — do NOT add explicitly
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
+    testImplementation(libs.okhttp.mockwebserver)
 }
 
 intellijPlatform {

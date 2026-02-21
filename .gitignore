@@ -10,6 +10,9 @@ out/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# IntelliJ Platform cache
+.intellijPlatform/
+
 # OS
 .DS_Store
 Thumbs.db
