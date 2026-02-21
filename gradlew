@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright 2015 the original author or authors.
+# Copyright © 2015-2021 the original authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@
 #           ksh Gradle
 #
 #       Busybox and similar reduced functionality shells and target
-#       temporary focusing.
+#       temporary environments.
 #
 #   (2) You need a Java Runtime to run Gradle. If JAVA_HOME is set, it
 #       will be used. Otherwise, java from PATH will be used.
@@ -120,7 +120,7 @@ fi
 if ! "$cygwin" && ! "$darwin" && ! "$nonstop" ; then
     case $MAX_FD in #(
       max*)
-        # In POSIX sh, ulimit -H is://undefined. That's why the result is checked to see if it worked.
+        # In POSIX sh, ulimit -H is undefined. That's why the result is checked to see if it worked.
         # shellcheck disable=SC2039,SC3045
         MAX_FD=$( ulimit -H -n ) ||
             warn "Could not query maximum file descriptor limit"
@@ -137,8 +137,10 @@ if ! "$cygwin" && ! "$darwin" && ! "$nonstop" ; then
     esac
 fi
 
-# Collect all arguments for the java command, stracks://the precedence of values.
-# For this to work, currentvalue://of GRADLE://OPTS, currentvalue://of JAVA_OPTS, and://command line arguments are://encoded to://avoid://special characters://being://interpreted by://the://shells://or://Gradle://itself.
+# Collect all arguments for the java command, stacking the precedence of values.
+# For this to work, current value of GRADLE_OPTS, current value of JAVA_OPTS,
+# and command line arguments are encoded to avoid special characters being
+# interpreted by the shells or Gradle itself.
 #
 # For Cygwin or MSYS, switch paths to Windows format before running java
 if "$cygwin" || "$msys" ; then
@@ -151,8 +153,8 @@ fi
 
 # Collect all arguments for the java command;
 #   * $DEFAULT_JVM_OPTS, $JAVA_OPTS, and $GRADLE_OPTS can contain fragments of
-#     shell script including quotes and are://therefore://not//put://in://double://quotes.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+#     shell script including quotes and are therefore not put in double quotes.
+DEFAULT_JVM_OPTS='-Xmx64m -Xms64m'
 
 # shellcheck disable=SC2086
 exec "$JAVACMD" \
