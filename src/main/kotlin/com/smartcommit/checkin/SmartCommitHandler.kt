@@ -1,12 +1,16 @@
 package com.smartcommit.checkin
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.CheckinProjectPanel
 import com.intellij.openapi.vcs.checkin.CheckinHandler
+import com.smartcommit.settings.AiProviderType
+import com.smartcommit.settings.GeneratorMode
 import com.smartcommit.settings.SmartCommitSettings
+import com.smartcommit.util.CloudDialogs
 import com.smartcommit.util.NotificationUtils
 
 /**
@@ -64,9 +68,10 @@ class SmartCommitHandler(
 
                 try {
                     val message = CommitMessageService.generate(project, changes.toList(), indicator)
+                    val cloudUsage = CommitMessageService.lastCloudUsage
 
                     // Apply message on EDT
-                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                    ApplicationManager.getApplication().invokeLater {
                         val existingMessage = panel.commitMessage.orEmpty().trim()
                         val settings = SmartCommitSettings.instance()
 
@@ -81,6 +86,32 @@ class SmartCommitHandler(
                         }
 
                         panel.setCommitMessage(message.format())
+
+                        // Show Cloud usage notification after successful generation
+                        if (cloudUsage != null) {
+                            CloudDialogs.showUsageNotification(
+                                project,
+                                cloudUsage.plan,
+                                cloudUsage.used,
+                                cloudUsage.limit
+                            )
+                        }
+                    }
+                } catch (e: CloudUsageException) {
+                    // Show appropriate Cloud dialog on EDT
+                    ApplicationManager.getApplication().invokeLater {
+                        when (e.reason) {
+                            CloudUsageException.Reason.LIMIT_EXHAUSTED ->
+                                CloudDialogs.showLimitExhaustedDialog(project, e.used, e.limit, e.resetAt)
+                            CloudUsageException.Reason.SUBSCRIPTION_INACTIVE ->
+                                CloudDialogs.showSubscriptionInactiveDialog(project)
+                            CloudUsageException.Reason.RATE_LIMITED ->
+                                CloudDialogs.showRateLimitError(project)
+                        }
+                    }
+                } catch (e: CloudNotConnectedException) {
+                    ApplicationManager.getApplication().invokeLater {
+                        CloudDialogs.showNotConnectedError(project)
                     }
                 } catch (e: Exception) {
                     NotificationUtils.error(

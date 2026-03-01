@@ -11,7 +11,8 @@
 
         <h3>Features</h3>
         <ul>
-            <li><b>AI-Powered:</b> Uses OpenAI (GPT-4o) or Ollama (local LLM) to generate context-aware messages</li>
+            <li><b>AI-Powered:</b> Uses Smart Commit Cloud (no API key needed), OpenAI, or Ollama (local) to generate context-aware messages</li>
+            <li><b>Smart Commit Cloud:</b> No API key required — connect your account, get 30 free generations/month, upgrade for more</li>
             <li><b>Template-Based:</b> Deterministic offline fallback using file paths, change types, and classification</li>
             <li><b>Convention Support:</b> Gitmoji, Conventional Commits, or free-form formatting</li>
             <li><b>Multi-Language:</b> Generate commit messages in 12 languages (English, Chinese, Japanese, and more)</li>
@@ -40,8 +41,8 @@
         <p>In Settings you can configure:</p>
         <ul>
             <li><b>Generator Mode</b> — AI-Powered or Template-Based</li>
-            <li><b>AI Provider</b> — OpenAI (cloud) or Ollama (local)</li>
-            <li><b>API Key</b> — Your OpenAI API key (stored securely in the system credential store)</li>
+            <li><b>AI Provider</b> — Smart Commit Cloud (no key needed), OpenAI, or Ollama (local)</li>
+            <li><b>API Key</b> — Your OpenAI API key (stored securely in the system credential store). Not needed for Cloud.</li>
             <li><b>Convention</b> — Gitmoji, Conventional Commits, or Free-form</li>
             <li><b>Commit Style</b> — One-line or Detailed</li>
             <li><b>Language</b> — English, Chinese, Japanese, Korean, Spanish, French, German, and more</li>

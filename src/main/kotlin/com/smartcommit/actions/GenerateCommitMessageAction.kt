@@ -12,8 +12,11 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.ChangeListManager
+import com.smartcommit.checkin.CloudNotConnectedException
+import com.smartcommit.checkin.CloudUsageException
 import com.smartcommit.checkin.CommitMessageService
 import com.smartcommit.settings.SmartCommitSettings
+import com.smartcommit.util.CloudDialogs
 import com.smartcommit.util.NotificationUtils
 
 /**
@@ -61,6 +64,7 @@ class GenerateCommitMessageAction : AnAction() {
 
                 try {
                     val message = CommitMessageService.generate(project, changes, indicator)
+                    val cloudUsage = CommitMessageService.lastCloudUsage
 
                     // Apply message on EDT
                     ApplicationManager.getApplication().invokeLater {
@@ -86,7 +90,34 @@ class GenerateCommitMessageAction : AnAction() {
                                 commitMessageDocument.setText(message.format())
                             }
                         }
-                        NotificationUtils.info(project, "Smart Commit", "Commit message generated successfully.")
+
+                        // Show Cloud usage notification after successful generation
+                        if (cloudUsage != null) {
+                            CloudDialogs.showUsageNotification(
+                                project,
+                                cloudUsage.plan,
+                                cloudUsage.used,
+                                cloudUsage.limit
+                            )
+                        } else {
+                            NotificationUtils.info(project, "Smart Commit", "Commit message generated successfully.")
+                        }
+                    }
+                } catch (e: CloudUsageException) {
+                    // Show appropriate Cloud dialog on EDT
+                    ApplicationManager.getApplication().invokeLater {
+                        when (e.reason) {
+                            CloudUsageException.Reason.LIMIT_EXHAUSTED ->
+                                CloudDialogs.showLimitExhaustedDialog(project, e.used, e.limit, e.resetAt)
+                            CloudUsageException.Reason.SUBSCRIPTION_INACTIVE ->
+                                CloudDialogs.showSubscriptionInactiveDialog(project)
+                            CloudUsageException.Reason.RATE_LIMITED ->
+                                CloudDialogs.showRateLimitError(project)
+                        }
+                    }
+                } catch (e: CloudNotConnectedException) {
+                    ApplicationManager.getApplication().invokeLater {
+                        CloudDialogs.showNotConnectedError(project)
                     }
                 } catch (ex: Exception) {
                     NotificationUtils.error(

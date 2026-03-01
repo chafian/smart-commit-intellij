@@ -5,6 +5,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.changes.Change
 import com.smartcommit.ai.AiCommitMessageGenerator
 import com.smartcommit.ai.AiProvider
+import com.smartcommit.ai.CloudAuthManager
+import com.smartcommit.ai.CloudProvider
 import com.smartcommit.ai.OllamaProvider
 import com.smartcommit.ai.OpenAiProvider
 import com.smartcommit.ai.PromptBuilder
@@ -27,10 +29,23 @@ import com.smartcommit.settings.SmartCommitSettings
  * - CommitMessageGenerator (template or AI-powered)
  * - CommitConvention (formatting)
  *
+ * For Cloud provider, [CloudProvider.complete] calls `POST /api/cloud/generate`
+ * which handles authentication, usage consumption, and OpenAI in a single request.
+ * On business errors (limit_exhausted, subscription_inactive), [CloudProvider]
+ * throws [CloudUsageException] which propagates up to the callers
+ * ([SmartCommitHandler], [GenerateCommitMessageAction]).
+ *
  * This is the single entry point called by [SmartCommitHandler] and
  * [GenerateCommitMessageAction].
  */
 object CommitMessageService {
+
+    /**
+     * Result of a Cloud generation that includes usage info for the notification.
+     * Stored so callers can read it after generate() returns.
+     */
+    var lastCloudUsage: CloudUsageInfo? = null
+        private set
 
     /**
      * Generate a commit message from a list of IntelliJ [Change] objects.
@@ -39,6 +54,8 @@ object CommitMessageService {
      * @param changes   The selected changes from the commit panel.
      * @param indicator Optional progress indicator for background task feedback.
      * @return A formatted [GeneratedCommitMessage].
+     * @throws CloudUsageException if Cloud provider quota is exhausted or subscription inactive.
+     * @throws CloudNotConnectedException if Cloud provider is selected but user is not connected.
      */
     @Suppress("UNUSED_PARAMETER") // project kept for future PasswordSafe per-project scope
     fun generate(
@@ -47,6 +64,7 @@ object CommitMessageService {
         indicator: ProgressIndicator? = null
     ): GeneratedCommitMessage {
         val settings = SmartCommitSettings.instance()
+        lastCloudUsage = null
 
         // Step 1: Analyze diffs
         indicator?.text = "Analyzing changes..."
@@ -63,15 +81,23 @@ object CommitMessageService {
         val generator = createGenerator(settings, convention)
 
         // Step 3: Generate
+        // For Cloud provider, this call goes through CloudProvider.complete()
+        // which calls POST /api/cloud/generate on the server.
+        // CloudUsageException / CloudNotConnectedException propagate up from here.
         val message = generator.generate(summary)
 
-        // Step 4: Apply commit style — strip body/footer for one-line mode
+        // Step 4: Retrieve Cloud usage info if this was a Cloud generation
+        if (settings.generatorMode == GeneratorMode.AI && settings.aiProvider == AiProviderType.CLOUD) {
+            lastCloudUsage = lastCloudProvider?.lastUsageInfo
+        }
+
+        // Step 5: Apply commit style — strip body/footer for one-line mode
         val styled = when (settings.commitStyle) {
             CommitStyle.ONE_LINE -> message.copy(body = null, footer = null)
             CommitStyle.DETAILED -> message
         }
 
-        // Step 5: Save to history
+        // Step 6: Save to history
         try {
             CommitMessageHistory.instance().add(styled.format())
         } catch (_: Exception) {
@@ -82,6 +108,11 @@ object CommitMessageService {
     }
 
     // ── Factory methods ─────────────────────────────────────
+
+    /**
+     * Reference to the last created CloudProvider, so we can read its lastUsageInfo.
+     */
+    private var lastCloudProvider: CloudProvider? = null
 
     private fun createGenerator(
         settings: SmartCommitSettings,
@@ -142,6 +173,13 @@ object CommitMessageService {
                 baseUrl = settings.ollamaUrl,
                 model = settings.ollamaModel
             )
+            AiProviderType.CLOUD -> {
+                val provider = CloudProvider(
+                    baseUrl = settings.cloudBaseUrl.trimEnd('/')
+                )
+                lastCloudProvider = provider
+                provider
+            }
         }
     }
 
@@ -154,3 +192,41 @@ object CommitMessageService {
         return stored.ifBlank { System.getenv("OPENAI_API_KEY") ?: "" }
     }
 }
+
+// ── Cloud-specific exceptions and data ──────────────────
+
+/**
+ * Thrown when Cloud usage cannot proceed. Callers should catch this
+ * and show the appropriate dialog (upgrade modal, subscription inactive, etc.).
+ */
+class CloudUsageException(
+    val reason: Reason,
+    val used: Int = 0,
+    val limit: Int = 0,
+    val resetAt: String = ""
+) : RuntimeException("Cloud usage blocked: $reason") {
+
+    enum class Reason {
+        LIMIT_EXHAUSTED,
+        SUBSCRIPTION_INACTIVE,
+        RATE_LIMITED
+    }
+}
+
+/**
+ * Thrown when Cloud provider is selected but user is not connected.
+ */
+class CloudNotConnectedException(
+    message: String = "Not connected to Smart Commit Cloud."
+) : RuntimeException(message)
+
+/**
+ * Usage info from a successful Cloud consumption, used for the notification.
+ */
+data class CloudUsageInfo(
+    val plan: String,
+    val used: Int,
+    val limit: Int,
+    val remaining: Int,
+    val resetAt: String
+)

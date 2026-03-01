@@ -94,6 +94,10 @@ class SmartCommitSettings : PersistentStateComponent<SmartCommitSettings.Setting
         get() = state.commitLanguage
         set(value) { state.commitLanguage = value }
 
+    var cloudBaseUrl: String
+        get() = state.cloudBaseUrl
+        set(value) { state.cloudBaseUrl = value }
+
     // ── State data class ────────────────────────────────────
 
     /**
@@ -102,7 +106,7 @@ class SmartCommitSettings : PersistentStateComponent<SmartCommitSettings.Setting
      */
     data class SettingsState(
         var generatorMode: GeneratorMode = GeneratorMode.AI,
-        var aiProvider: AiProviderType = AiProviderType.OPENAI,
+        var aiProvider: AiProviderType = AiProviderType.CLOUD,
         var openAiModel: String = "gpt-4o-mini",
         var ollamaModel: String = "llama3",
         var ollamaUrl: String = "http://localhost:11434",
@@ -116,7 +120,8 @@ class SmartCommitSettings : PersistentStateComponent<SmartCommitSettings.Setting
         var maxSubjectLength: Int = 72,
         var customSystemPrompt: String = "",
         var customTitleTemplate: String = "",
-        var customBodyTemplate: String = ""
+        var customBodyTemplate: String = "",
+        var cloudBaseUrl: String = "https://api.smartcommit.dev"
     )
 
     companion object {
@@ -138,10 +143,14 @@ enum class GeneratorMode(val displayName: String) {
 
 /**
  * Which AI provider to use.
+ *
+ * CLOUD is listed first and is the default — it's the zero-friction path.
+ * Enum order determines dropdown order via `entries.toList()`.
  */
 enum class AiProviderType(val displayName: String) {
-    OPENAI("OpenAI"),
-    OLLAMA("Ollama (Local)");
+    CLOUD("Smart Commit Cloud (Recommended)"),
+    OPENAI("OpenAI (Advanced \u2013 Bring your own API key)"),
+    OLLAMA("Ollama (Local \u2013 Offline)");
 
     override fun toString(): String = displayName
 }
