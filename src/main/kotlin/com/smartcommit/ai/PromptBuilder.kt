@@ -29,8 +29,18 @@ class PromptBuilder(
     private val conventionHint: String = "",
     private val oneLineOnly: Boolean = false,
     private val languageHint: String = "",
-    private val customSystemPrompt: String = ""
+    private val customSystemPrompt: String = "",
+    private val maxSubjectLength: Int = 72
 ) {
+
+    /** Format the output format template with the user's max subject length. */
+    private fun outputFormat(): String = OUTPUT_FORMAT_TEMPLATE.format(maxSubjectLength)
+
+    /** Format the style rules template with the user's max subject length. */
+    private fun styleRules(): String = STYLE_RULES_TEMPLATE.format(maxSubjectLength)
+
+    /** Format the one-line hint with the user's max subject length. */
+    private fun oneLineHint(): String = ONE_LINE_HINT_TEMPLATE.format(maxSubjectLength)
 
     /**
      * Build the system prompt — the LLM's "role" and formatting rules.
@@ -38,12 +48,12 @@ class PromptBuilder(
     fun buildSystemPrompt(): String = buildString {
         append(SYSTEM_ROLE)
         append("\n\n")
-        append(OUTPUT_FORMAT)
+        append(outputFormat())
         append("\n\n")
-        append(STYLE_RULES)
+        append(styleRules())
         if (oneLineOnly) {
             append("\n\n")
-            append(ONE_LINE_HINT)
+            append(oneLineHint())
         }
         if (conventionHint.isNotBlank()) {
             append("\n\n")
@@ -128,9 +138,9 @@ class PromptBuilder(
 Your sole task is to analyze a code diff and produce a single, high-quality commit message. \
 You must respond ONLY with a valid JSON object — no markdown, no explanation, no commentary."""
 
-        internal const val OUTPUT_FORMAT = """Respond with EXACTLY this JSON structure:
+        internal const val OUTPUT_FORMAT_TEMPLATE = """Respond with EXACTLY this JSON structure:
 {
-  "title": "<imperative-mood subject line, max 72 characters>",
+  "title": "<imperative-mood subject line, max %d characters>",
   "body": "<optional multi-line explanation of WHY the change was made, wrap at 72 chars>",
   "footer": "<optional: issue references, breaking change notes, or null>"
 }
@@ -142,13 +152,13 @@ Rules for the JSON:
 - Do NOT wrap the JSON in markdown code fences.
 - Do NOT include any text outside the JSON object."""
 
-        internal const val ONE_LINE_HINT = """IMPORTANT: The user wants a ONE-LINE commit message only. \
+        internal const val ONE_LINE_HINT_TEMPLATE = """IMPORTANT: The user wants a ONE-LINE commit message only. \
 Set "body" to null and "footer" to null. \
-Put all the important information in the "title" field. Keep it concise and under 72 characters."""
+Put all the important information in the "title" field. Keep it concise and under %d characters."""
 
-        internal const val STYLE_RULES = """Commit message style rules:
+        internal const val STYLE_RULES_TEMPLATE = """Commit message style rules:
 - Title: use imperative mood ("Add feature" not "Added feature").
-- Title: max 72 characters. Be specific about WHAT changed.
+- Title: max %d characters. Be specific about WHAT changed.
 - Title: do NOT include file paths.
 - Title: do NOT start with a category prefix unless convention rules say otherwise.
 - Body: explain WHY the change was made, not WHAT (the diff shows what).

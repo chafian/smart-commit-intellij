@@ -5,6 +5,36 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-02
+
+### Added
+- **Smart Commit Cloud** — New default AI provider. Zero configuration, no API keys needed. Free tier with 30 generations/month, paid plans for Starter ($1/mo, 300/month) and Pro ($5/mo, 3,000/month).
+- **Cloud-first settings UI** — Cloud provider shown first with "(Recommended)" label. Rich status panel with colored connection indicator, plan display, usage counter with reset countdown, and pricing link.
+- **IDE Connect flow** — Device-code authentication to link your IDE to your Smart Commit Cloud account. Connect via browser approval.
+- **Upgrade modal** — In-app upgrade prompt when free tier is exhausted, with plan comparison and direct links to pricing.
+- **Usage notifications** — Post-generation notification showing current usage with upgrade nudge for free users.
+- **Message history popup** — Browse previously generated commit messages (`Alt+H`) with live preview, cancel restore, and positioning that matches IntelliJ's built-in history popup.
+- **Dynamic max subject length** — The AI prompt now respects the user's configured max subject length setting instead of always using 72 characters.
+- **Settings loading state** — Cloud status shows "Loading..." while fetching account info, with "Could not load" fallback on failure.
+
+### Changed
+- Default AI provider changed from OpenAI to Smart Commit Cloud.
+- OpenAI and Ollama settings sections are now hidden when not selected, reducing UI clutter.
+- Sections renamed to "Advanced Customization" and "Generation Limits" for clarity.
+- History action icon changed from clock (Vcs.History) to stacked layers (Nodes.PpLib) to distinguish from IntelliJ's built-in Commit Message History.
+
+### Fixed
+- **Enum serialization** — Removed `toString()` overrides on enums stored in `@State` to prevent settings corruption when display names change. Combo boxes now use `SimpleListCellRenderer` with `displayName` property.
+- **Cloud server URL** — Hidden from settings UI (internal implementation detail).
+
+### Removed
+- Deprecated `CloudUsageClient` class and its tests (replaced by integrated `CloudProvider` endpoint).
+
+### Technical Details
+- Cloud provider uses single `POST /api/cloud/generate` endpoint (auth + usage + generation in one call).
+- Token management via IntelliJ PasswordSafe with automatic refresh on 401.
+- Server-side usage enforcement via atomic MongoDB operations.
+
 ## [1.0.0] - 2026-02-20
 
 ### Added
@@ -33,4 +63,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
-[1.0.0]: https://github.com/smart-commit/smart-commit-plugin/releases/tag/v1.0.0
+[1.1.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.0
+[1.0.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.0.0

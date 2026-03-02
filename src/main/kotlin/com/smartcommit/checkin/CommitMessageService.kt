@@ -139,7 +139,8 @@ object CommitMessageService {
                     conventionHint = convention.promptHint(),
                     oneLineOnly = settings.commitStyle == CommitStyle.ONE_LINE,
                     languageHint = languageHint,
-                    customSystemPrompt = settings.customSystemPrompt
+                    customSystemPrompt = settings.customSystemPrompt,
+                    maxSubjectLength = settings.maxSubjectLength
                 )
                 val titleTpl = settings.customTitleTemplate.ifBlank { null }
                 val bodyTpl = settings.customBodyTemplate.ifBlank { null }

@@ -333,15 +333,18 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
         pricingLinkLabel?.isVisible = true
 
         if (connected) {
-            // Try cached usage first
+            // Try cached usage first, otherwise show "loading"
             val cached = CommitMessageService.lastCloudUsage
             if (cached != null) {
                 showUsageData(cached.plan, cached.used, cached.limit, cached.resetAt)
             } else {
-                planLabel?.isVisible = false
-                usageLabel?.isVisible = false
+                // Show loading state while we fetch
+                planLabel?.text = "Plan: Loading..."
+                planLabel?.isVisible = true
+                usageLabel?.text = "Usage: Loading..."
+                usageLabel?.isVisible = true
             }
-            // Fetch live data
+            // Fetch live data (will update labels when done)
             fetchAccountInfoInBackground()
         } else {
             planLabel?.isVisible = false
@@ -411,6 +414,7 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
                 var accessToken = CloudAuthManager.getAccessToken()
                 if (accessToken == null) {
                     log.warn("SmartCommit: fetchAccountInfo — no access token")
+                    showFetchFailed()
                     return@executeOnPooledThread
                 }
 
@@ -422,6 +426,7 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
                     val newToken = CloudAuthManager.refreshTokens(baseUrl)
                     if (newToken == null) {
                         log.warn("SmartCommit: fetchAccountInfo — refresh failed")
+                        showFetchFailed()
                         return@executeOnPooledThread
                     }
                     accessToken = newToken
@@ -431,6 +436,7 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
                 val (code, body) = response
                 if (code != 200 || body == null) {
                     log.warn("SmartCommit: fetchAccountInfo — HTTP $code")
+                    showFetchFailed()
                     return@executeOnPooledThread
                 }
 
@@ -446,13 +452,27 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
                 log.info("SmartCommit: fetchAccountInfo — plan=$plan email=$email used=$used limit=$limit")
 
                 ApplicationManager.getApplication().invokeLater {
-                    // Update status with server email
                     statusLabel?.text = buildStatusHtml(true, email ?: getEmailSafe())
                     showUsageData(plan, used, limit, resetAt)
                 }
 
             } catch (e: Exception) {
                 log.warn("SmartCommit: fetchAccountInfo failed", e)
+                showFetchFailed()
+            }
+        }
+    }
+
+    /**
+     * Called on EDT when background fetch fails — clear the "Loading..." state.
+     * Shows "Could not load" so the user knows the fetch didn't work.
+     */
+    private fun showFetchFailed() {
+        ApplicationManager.getApplication().invokeLater {
+            // Only update if still showing "Loading..."
+            if (planLabel?.text?.contains("Loading") == true) {
+                planLabel?.text = "Plan: Could not load — check connection"
+                usageLabel?.isVisible = false
             }
         }
     }

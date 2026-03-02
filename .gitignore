@@ -27,3 +27,6 @@ desktop.ini
 # Local environment
 .env
 *.local
+
+# Sandbox logs
+sandbox-output.log
