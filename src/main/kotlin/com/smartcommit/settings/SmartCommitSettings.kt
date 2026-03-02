@@ -133,12 +133,14 @@ class SmartCommitSettings : PersistentStateComponent<SmartCommitSettings.Setting
 
 /**
  * Whether to use AI-powered or template-based commit message generation.
+ *
+ * NOTE: Do NOT override toString() — IntelliJ's @State XML serializer uses
+ * toString() for enum persistence. Changing it breaks existing user configs.
+ * Use [displayName] for UI rendering via custom cell renderer in combo boxes.
  */
 enum class GeneratorMode(val displayName: String) {
     AI("AI-Powered"),
     TEMPLATE("Template-Based");
-
-    override fun toString(): String = displayName
 }
 
 /**
@@ -146,13 +148,13 @@ enum class GeneratorMode(val displayName: String) {
  *
  * CLOUD is listed first and is the default — it's the zero-friction path.
  * Enum order determines dropdown order via `entries.toList()`.
+ *
+ * NOTE: Do NOT override toString() — see [GeneratorMode] note.
  */
 enum class AiProviderType(val displayName: String) {
     CLOUD("Smart Commit Cloud (Recommended)"),
     OPENAI("OpenAI (Advanced \u2013 Bring your own API key)"),
     OLLAMA("Ollama (Local \u2013 Offline)");
-
-    override fun toString(): String = displayName
 }
 
 /**
@@ -161,8 +163,6 @@ enum class AiProviderType(val displayName: String) {
 enum class CommitStyle(val displayName: String) {
     ONE_LINE("One-Line (title only)"),
     DETAILED("Detailed (title + body)");
-
-    override fun toString(): String = displayName
 }
 
 /**
@@ -181,6 +181,4 @@ enum class CommitLanguage(val displayName: String, val promptHint: String) {
     ARABIC("Arabic", "Write the commit message in Arabic (\u0627\u0644\u0639\u0631\u0628\u064A\u0629)."),
     HINDI("Hindi", "Write the commit message in Hindi (\u0939\u093F\u0928\u094D\u0926\u0940)."),
     TURKISH("Turkish", "Write the commit message in Turkish (T\u00FCrk\u00E7e).");
-
-    override fun toString(): String = displayName
 }

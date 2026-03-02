@@ -28,8 +28,10 @@ import java.awt.Font
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
+import com.intellij.ui.SimpleListCellRenderer
 import javax.swing.JButton
 import javax.swing.JLabel
+import javax.swing.JList
 import javax.swing.JPanel
 
 /**
@@ -69,29 +71,42 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
             row("Generator Mode:") {
                 comboBox(GeneratorMode.entries.toList())
                     .bindItem(settings::generatorMode.toNullableProperty())
+                    .applyToComponent {
+                        renderer = SimpleListCellRenderer.create("") { it?.displayName ?: "" }
+                    }
                     .comment("AI-Powered uses an LLM; Template-Based is deterministic and offline")
             }
             row("AI Provider:") {
                 comboBox(AiProviderType.entries.toList())
                     .bindItem(settings::aiProvider.toNullableProperty())
-                    .comment("Cloud is zero-config. OpenAI and Ollama require manual setup.")
                     .applyToComponent {
+                        renderer = SimpleListCellRenderer.create("") { it?.displayName ?: "" }
                         addActionListener { updateProviderSections() }
                     }
+                    .comment("Cloud is zero-config. OpenAI and Ollama require manual setup.")
             }
             row("Convention:") {
                 comboBox(ConventionType.entries.toList())
                     .bindItem(settings::convention.toNullableProperty())
+                    .applyToComponent {
+                        renderer = SimpleListCellRenderer.create("") { it?.displayName ?: "" }
+                    }
                     .comment("Gitmoji adds emoji prefixes; Conventional Commits uses type(scope): format")
             }
             row("Commit Style:") {
                 comboBox(CommitStyle.entries.toList())
                     .bindItem(settings::commitStyle.toNullableProperty())
+                    .applyToComponent {
+                        renderer = SimpleListCellRenderer.create("") { it?.displayName ?: "" }
+                    }
                     .comment("One-Line produces only a title; Detailed includes title + body explanation")
             }
             row("Language:") {
                 comboBox(CommitLanguage.entries.toList())
                     .bindItem(settings::commitLanguage.toNullableProperty())
+                    .applyToComponent {
+                        renderer = SimpleListCellRenderer.create("") { it?.displayName ?: "" }
+                    }
                     .comment("Language for the generated commit message (AI mode only)")
             }
             row {

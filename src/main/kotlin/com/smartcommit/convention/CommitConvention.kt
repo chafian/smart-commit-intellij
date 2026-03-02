@@ -51,8 +51,6 @@ enum class ConventionType(val displayName: String) {
     CONVENTIONAL("Conventional Commits"),
     FREEFORM("Free-form");
 
-    override fun toString(): String = displayName
-
     /**
      * Create the corresponding [CommitConvention] instance.
      */
