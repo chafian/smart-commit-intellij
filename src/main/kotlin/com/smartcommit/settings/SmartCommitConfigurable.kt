@@ -61,6 +61,9 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
     private var notConnectedHintLabel: JLabel? = null
     private var pricingLinkLabel: JLabel? = null
 
+    // Provider combo box reference (to read current selection before apply)
+    private var providerComboBox: javax.swing.JComboBox<AiProviderType>? = null
+
     // OpenAI / Ollama panels for dynamic show/hide
     private var openAiWrapperPanel: JPanel? = null
     private var ollamaWrapperPanel: JPanel? = null
@@ -81,6 +84,8 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
                     .bindItem(settings::aiProvider.toNullableProperty())
                     .applyToComponent {
                         renderer = SimpleListCellRenderer.create("") { it?.displayName ?: "" }
+                        @Suppress("UNCHECKED_CAST")
+                        providerComboBox = this as? javax.swing.JComboBox<AiProviderType>
                         addActionListener { updateProviderSections() }
                     }
                     .comment("Cloud is zero-config. OpenAI and Ollama require manual setup.")
@@ -295,7 +300,8 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
     // ── Provider section visibility ─────────────────────────
 
     private fun updateProviderSections() {
-        val provider = settings.aiProvider
+        // Read from the combo box directly (settings value isn't updated until apply)
+        val provider = providerComboBox?.selectedItem as? AiProviderType ?: settings.aiProvider
         openAiWrapperPanel?.isVisible = (provider == AiProviderType.OPENAI)
         ollamaWrapperPanel?.isVisible = (provider == AiProviderType.OLLAMA)
     }
@@ -591,13 +597,28 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
                                 val tokens = pollJson["tokens"]?.jsonObject ?: return
                                 val accessToken = tokens["accessToken"]?.jsonPrimitive?.content ?: return
                                 val refreshToken = tokens["refreshToken"]?.jsonPrimitive?.content ?: return
-                                val email = pollJson["account"]?.jsonObject
-                                    ?.get("email")?.jsonPrimitive?.content
+                                val accountObj = pollJson["account"]?.jsonObject
+                                val email = accountObj?.get("email")?.jsonPrimitive?.content
 
                                 CloudAuthManager.saveTokens(accessToken, refreshToken, email)
 
+                                // Cache usage data from the poll response so settings shows it immediately
+                                val usageObj = accountObj?.get("usage")?.jsonObject
+                                val plan = accountObj?.get("plan")?.jsonPrimitive?.content ?: "FREE"
+                                val used = usageObj?.get("used")?.jsonPrimitive?.int ?: 0
+                                val usageLimit = usageObj?.get("limit")?.jsonPrimitive?.int ?: 30
+                                val resetAt = usageObj?.get("resetAt")?.jsonPrimitive?.content ?: ""
+
                                 ApplicationManager.getApplication().invokeLater {
-                                    refreshCloudSection()
+                                    // Show status with email immediately
+                                    statusLabel?.text = buildStatusHtml(true, email)
+                                    showUsageData(plan, used, usageLimit, resetAt)
+                                    // Buttons
+                                    connectButton?.isVisible = false
+                                    manageAccountButton?.isVisible = true
+                                    signOutButton?.isVisible = true
+                                    notConnectedHintLabel?.isVisible = false
+
                                     Messages.showInfoMessage(
                                         "Successfully connected to Smart Commit Cloud" +
                                             (if (email != null) " as $email" else "") + ".",
