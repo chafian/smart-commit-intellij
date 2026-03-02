@@ -5,6 +5,12 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-03-02
+
+### Changed
+- Toolbar icons reverted to standard IntelliJ icons (Lightning for Generate, PpLib for History) for better visual consistency with the IDE.
+- Branded gradient icon kept for JetBrains Marketplace listing only.
+
 ## [1.1.0] - 2026-03-02
 
 ### Added
@@ -63,5 +69,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
+[1.1.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.1
 [1.1.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.0
 [1.0.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.0.0
