@@ -86,7 +86,7 @@
                 class="com.smartcommit.actions.GenerateCommitMessageAction"
                 text="Generate Commit Message"
                 description="Analyze staged changes and generate a commit message"
-                icon="/icons/generate.svg">
+                icon="AllIcons.Actions.Lightning">
             <add-to-group group-id="Vcs.MessageActionGroup" anchor="first"/>
             <keyboard-shortcut keymap="$default" first-keystroke="alt G"/>
         </action>

@@ -7,7 +7,7 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.JBPopupListener
 import com.intellij.openapi.ui.popup.LightweightWindowEvent
 import com.intellij.openapi.vcs.VcsDataKeys
-import com.intellij.openapi.util.IconLoader
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.vcs.ui.CommitMessage
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.awt.RelativePoint
@@ -33,7 +33,7 @@ import javax.swing.ListSelectionModel
 class ShowCommitHistoryAction : AnAction(
     "Smart Commit History",
     "Show previously generated commit messages",
-    IconLoader.getIcon("/icons/history.svg", ShowCommitHistoryAction::class.java)
+    AllIcons.Nodes.PpLib
 ) {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
