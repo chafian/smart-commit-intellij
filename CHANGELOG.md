@@ -5,6 +5,11 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-05
+
+### Added
+- **First-run welcome dialog** — Shown once after installation to explain Smart Commit Cloud: free tier, no API keys, secure. Offers "Connect IDE", "Use OpenAI instead", or "Close" as clear next steps.
+
 ## [1.1.1] - 2026-03-02
 
 ### Changed
@@ -69,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
+[1.2.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.0
 [1.1.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.1
 [1.1.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.0
 [1.0.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.0.0

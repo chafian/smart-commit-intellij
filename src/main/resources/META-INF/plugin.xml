@@ -79,6 +79,9 @@
         <notificationGroup
                 id="Smart Commit"
                 displayType="BALLOON"/>
+
+        <postStartupActivity
+                implementation="com.smartcommit.onboarding.FirstRunStartupActivity"/>
     </extensions>
 
     <actions>
