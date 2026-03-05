@@ -5,6 +5,17 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-03-05
+
+### Added
+- **Actionable "Not Connected" dialog** — When generating with Cloud but not connected, shows clear dialog with three options: "Connect IDE" (starts device-code flow directly), "Switch to OpenAI", or "Cancel". Replaces the old "Open Settings" dialog.
+- **Cloud hint notification** — After generating with OpenAI or Ollama, shows a subtle nudge: "Tip: Smart Commit Cloud works without API keys. Free plan includes 30 generations/month." with a clickable "Connect IDE" action. Shown up to 3 times, never if already connected.
+- **Shared DeviceCodeFlowHelper** — Extracted device-code flow into a reusable utility, eliminating code duplication across welcome dialog, settings, and error dialogs.
+
+### Changed
+- `NotificationUtils` now supports notifications with action links via `infoWithAction()`.
+- `FirstRunStartupActivity` simplified from 205 to 71 lines by using shared `DeviceCodeFlowHelper`.
+
 ## [1.2.1] - 2026-03-05
 
 ### Fixed
@@ -83,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
+[1.2.2]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.2
 [1.2.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.1
 [1.2.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.0
 [1.1.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.1
