@@ -3,6 +3,7 @@ package com.smartcommit.util
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import java.util.prefs.Preferences
 
 /**
  * Dialog and notification helpers for Smart Commit Cloud.
@@ -17,6 +18,11 @@ object CloudDialogs {
 
     private const val PRICING_URL = "https://smartcommit.dev/pricing"
     private const val ACCOUNT_URL = "https://smartcommit.dev/account"
+
+    /** Max number of times to show the Cloud hint after non-Cloud generations */
+    private const val MAX_CLOUD_HINTS = 3
+    private const val PREF_KEY_CLOUD_HINT_COUNT = "smartcommit.cloud.hint.count"
+    private val prefs = Preferences.userNodeForPackage(CloudDialogs::class.java)
 
     /**
      * Show the upgrade modal when monthly limit is reached.
@@ -102,23 +108,39 @@ object CloudDialogs {
     }
 
     /**
-     * Show error dialog when user tries Cloud generation without connecting.
-     * Offers to open settings for reconnection.
+     * Result of the "not connected" dialog — tells callers what action to take.
      */
-    fun showNotConnectedError(project: Project?) {
+    enum class NotConnectedAction {
+        CONNECT_IDE,
+        SWITCH_OPENAI,
+        CANCEL
+    }
+
+    /**
+     * Show dialog when user tries Cloud generation without connecting.
+     *
+     * Message: "Smart Commit Cloud requires connecting your IDE.
+     *           Free plan includes 30 commit generations/month."
+     *
+     * Buttons: [Connect IDE] [Switch to OpenAI] [Cancel]
+     *
+     * @return The action the user chose.
+     */
+    fun showNotConnectedDialog(project: Project?): NotConnectedAction {
         val result = Messages.showDialog(
             project,
-            "Your Smart Commit Cloud session has expired or is not connected.\n\n" +
-                "Open Settings to reconnect your IDE, or switch to a different AI provider.",
-            "Smart Commit Cloud — Not Connected",
-            arrayOf("Open Settings", "Cancel"),
+            "Smart Commit Cloud requires connecting your IDE.\n\n" +
+                "Free plan includes 30 commit generations/month.",
+            "Smart Commit Cloud",
+            arrayOf("Connect IDE", "Switch to OpenAI", "Cancel"),
             0,
-            Messages.getWarningIcon()
+            Messages.getInformationIcon()
         )
 
-        if (result == 0) {
-            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
-                .showSettingsDialog(project, "Smart Commit")
+        return when (result) {
+            0 -> NotConnectedAction.CONNECT_IDE
+            1 -> NotConnectedAction.SWITCH_OPENAI
+            else -> NotConnectedAction.CANCEL
         }
     }
 
@@ -163,6 +185,36 @@ object CloudDialogs {
             "Smart Commit Cloud",
             content
         )
+    }
+
+    /**
+     * Show a Cloud hint notification after a non-Cloud generation (OpenAI/Ollama/template).
+     *
+     * Shown up to [MAX_CLOUD_HINTS] times total, then never again.
+     * Skipped if the user is already connected to Cloud.
+     *
+     * Message: "Tip: Smart Commit Cloud works without API keys.
+     *           Free plan includes 30 generations/month."
+     * Action: [Connect IDE] — starts the device-code flow.
+     */
+    fun showCloudHintIfNeeded(project: Project?) {
+        // Skip if already connected
+        if (com.smartcommit.ai.CloudAuthManager.isConnected()) return
+
+        val count = prefs.getInt(PREF_KEY_CLOUD_HINT_COUNT, 0)
+        if (count >= MAX_CLOUD_HINTS) return
+
+        prefs.putInt(PREF_KEY_CLOUD_HINT_COUNT, count + 1)
+
+        NotificationUtils.infoWithAction(
+            project,
+            "Smart Commit Cloud",
+            "Tip: Smart Commit Cloud works without API keys. " +
+                "Free plan includes 30 generations/month.",
+            "Connect IDE"
+        ) {
+            DeviceCodeFlowHelper.start(project)
+        }
     }
 
     /**

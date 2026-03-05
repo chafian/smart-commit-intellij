@@ -15,8 +15,10 @@ import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.smartcommit.checkin.CloudNotConnectedException
 import com.smartcommit.checkin.CloudUsageException
 import com.smartcommit.checkin.CommitMessageService
+import com.smartcommit.settings.AiProviderType
 import com.smartcommit.settings.SmartCommitSettings
 import com.smartcommit.util.CloudDialogs
+import com.smartcommit.util.DeviceCodeFlowHelper
 import com.smartcommit.util.NotificationUtils
 
 /**
@@ -101,6 +103,8 @@ class GenerateCommitMessageAction : AnAction() {
                             )
                         } else {
                             NotificationUtils.info(project, "Smart Commit", "Commit message generated successfully.")
+                            // Nudge non-Cloud users toward Cloud
+                            CloudDialogs.showCloudHintIfNeeded(project)
                         }
                     }
                 } catch (e: CloudUsageException) {
@@ -117,7 +121,16 @@ class GenerateCommitMessageAction : AnAction() {
                     }
                 } catch (e: CloudNotConnectedException) {
                     ApplicationManager.getApplication().invokeLater {
-                        CloudDialogs.showNotConnectedError(project)
+                        when (CloudDialogs.showNotConnectedDialog(project)) {
+                            CloudDialogs.NotConnectedAction.CONNECT_IDE -> {
+                                DeviceCodeFlowHelper.start(project)
+                            }
+                            CloudDialogs.NotConnectedAction.SWITCH_OPENAI -> {
+                                SmartCommitSettings.instance().aiProvider = AiProviderType.OPENAI
+                                NotificationUtils.info(project, "Smart Commit", "Switched to OpenAI. Set your API key in Settings > Tools > Smart Commit.")
+                            }
+                            CloudDialogs.NotConnectedAction.CANCEL -> { /* do nothing */ }
+                        }
                     }
                 } catch (ex: Exception) {
                     NotificationUtils.error(

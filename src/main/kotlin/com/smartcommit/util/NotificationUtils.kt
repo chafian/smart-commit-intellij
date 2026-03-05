@@ -1,5 +1,6 @@
 package com.smartcommit.util
 
+import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
@@ -23,6 +24,23 @@ object NotificationUtils {
 
     fun error(project: Project?, title: String, content: String = "") {
         notify(project, title, content, NotificationType.ERROR)
+    }
+
+    /**
+     * Show an info notification with an action link.
+     */
+    fun infoWithAction(
+        project: Project?,
+        title: String,
+        content: String,
+        actionText: String,
+        action: () -> Unit
+    ) {
+        NotificationGroupManager.getInstance()
+            .getNotificationGroup(GROUP_ID)
+            .createNotification(title, content, NotificationType.INFORMATION)
+            .addAction(NotificationAction.createSimpleExpiring(actionText) { action() })
+            .notify(project)
     }
 
     private fun notify(

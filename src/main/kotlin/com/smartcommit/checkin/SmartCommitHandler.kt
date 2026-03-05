@@ -11,6 +11,7 @@ import com.smartcommit.settings.AiProviderType
 import com.smartcommit.settings.GeneratorMode
 import com.smartcommit.settings.SmartCommitSettings
 import com.smartcommit.util.CloudDialogs
+import com.smartcommit.util.DeviceCodeFlowHelper
 import com.smartcommit.util.NotificationUtils
 
 /**
@@ -95,6 +96,9 @@ class SmartCommitHandler(
                                 cloudUsage.used,
                                 cloudUsage.limit
                             )
+                        } else {
+                            // Nudge non-Cloud users toward Cloud
+                            CloudDialogs.showCloudHintIfNeeded(project)
                         }
                     }
                 } catch (e: CloudUsageException) {
@@ -111,7 +115,16 @@ class SmartCommitHandler(
                     }
                 } catch (e: CloudNotConnectedException) {
                     ApplicationManager.getApplication().invokeLater {
-                        CloudDialogs.showNotConnectedError(project)
+                        when (CloudDialogs.showNotConnectedDialog(project)) {
+                            CloudDialogs.NotConnectedAction.CONNECT_IDE -> {
+                                DeviceCodeFlowHelper.start(project)
+                            }
+                            CloudDialogs.NotConnectedAction.SWITCH_OPENAI -> {
+                                SmartCommitSettings.instance().aiProvider = AiProviderType.OPENAI
+                                NotificationUtils.info(project, "Smart Commit", "Switched to OpenAI. Set your API key in Settings > Tools > Smart Commit.")
+                            }
+                            CloudDialogs.NotConnectedAction.CANCEL -> { /* do nothing */ }
+                        }
                     }
                 } catch (e: Exception) {
                     NotificationUtils.error(
