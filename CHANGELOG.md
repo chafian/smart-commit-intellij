@@ -5,6 +5,15 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-03-05
+
+### Fixed
+- **Cloud fallback bug** — After IDE restart or token expiration, the plugin silently fell back to template-generated messages instead of notifying the user. Now properly shows "Not Connected" dialog with option to open Settings and reconnect.
+- **Not Connected dialog** — Upgraded from a dismissible notification to an actionable dialog with "Open Settings" button for quick reconnection.
+
+### Changed
+- Added diagnostic logging in CloudProvider for easier debugging of auth/refresh issues.
+
 ## [1.2.0] - 2026-03-05
 
 ### Added
@@ -74,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
+[1.2.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.1
 [1.2.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.0
 [1.1.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.1
 [1.1.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.1.0

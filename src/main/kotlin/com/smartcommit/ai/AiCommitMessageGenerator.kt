@@ -1,5 +1,7 @@
 package com.smartcommit.ai
 
+import com.smartcommit.checkin.CloudNotConnectedException
+import com.smartcommit.checkin.CloudUsageException
 import com.smartcommit.convention.CommitConvention
 import com.smartcommit.diff.model.DiffSummary
 import com.smartcommit.generator.CommitMessageGenerator
@@ -57,8 +59,14 @@ class AiCommitMessageGenerator(
 
         return try {
             generateFromAi(summary)
+        } catch (e: CloudNotConnectedException) {
+            // Must propagate — caller shows reconnect UI
+            throw e
+        } catch (e: CloudUsageException) {
+            // Must propagate — caller shows upgrade/limit dialog
+            throw e
         } catch (e: Exception) {
-            // Absolute safety net — nothing escapes
+            // Absolute safety net — nothing escapes (except Cloud business errors above)
             safeFallback(summary, reason = "Unexpected error: ${e.message}")
         }
     }

@@ -1,5 +1,6 @@
 package com.smartcommit.ai
 
+import com.intellij.openapi.diagnostic.Logger
 import com.smartcommit.checkin.CloudNotConnectedException
 import com.smartcommit.checkin.CloudUsageException
 import com.smartcommit.checkin.CloudUsageInfo
@@ -39,6 +40,8 @@ open class CloudProvider(
     private val baseUrl: String = "https://api.smartcommit.dev"
 ) : AiProvider {
 
+    private val log = Logger.getInstance(CloudProvider::class.java)
+
     override val name: String = "Smart Commit Cloud"
 
     /** Usage info from the last successful generation. Read by callers for notification. */
@@ -58,20 +61,30 @@ open class CloudProvider(
         lastUsageInfo = null
 
         val accessToken = CloudAuthManager.getAccessToken()
-            ?: throw CloudNotConnectedException()
+        if (accessToken == null) {
+            log.warn("SmartCommit Cloud: no access token found — not connected")
+            throw CloudNotConnectedException()
+        }
 
         // First attempt
+        log.info("SmartCommit Cloud: calling /api/cloud/generate...")
         var result = callGenerate(accessToken, systemPrompt, userPrompt)
 
         // Handle 401: refresh token and retry once
         if (result.isUnauthorized) {
+            log.info("SmartCommit Cloud: got 401, attempting token refresh...")
             val newToken = CloudAuthManager.refreshTokens(baseUrl)
-                ?: throw CloudNotConnectedException("Session expired. Please reconnect your IDE.")
+            if (newToken == null) {
+                log.warn("SmartCommit Cloud: token refresh failed — session expired")
+                throw CloudNotConnectedException("Session expired. Please reconnect your IDE in Settings > Tools > Smart Commit.")
+            }
+            log.info("SmartCommit Cloud: token refreshed, retrying generate...")
             result = callGenerate(newToken, systemPrompt, userPrompt)
 
             if (result.isUnauthorized) {
+                log.warn("SmartCommit Cloud: still 401 after refresh — clearing tokens")
                 CloudAuthManager.clearTokens()
-                throw CloudNotConnectedException("Session expired. Please reconnect your IDE.")
+                throw CloudNotConnectedException("Session expired. Please reconnect your IDE in Settings > Tools > Smart Commit.")
             }
         }
 

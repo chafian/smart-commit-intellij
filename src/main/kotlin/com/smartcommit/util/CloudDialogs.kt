@@ -102,14 +102,24 @@ object CloudDialogs {
     }
 
     /**
-     * Show error notification when user tries Cloud generation without connecting.
+     * Show error dialog when user tries Cloud generation without connecting.
+     * Offers to open settings for reconnection.
      */
     fun showNotConnectedError(project: Project?) {
-        NotificationUtils.warning(
+        val result = Messages.showDialog(
             project,
-            "Not Connected to Smart Commit Cloud",
-            "Go to Settings > Tools > Smart Commit to connect your IDE."
+            "Your Smart Commit Cloud session has expired or is not connected.\n\n" +
+                "Open Settings to reconnect your IDE, or switch to a different AI provider.",
+            "Smart Commit Cloud — Not Connected",
+            arrayOf("Open Settings", "Cancel"),
+            0,
+            Messages.getWarningIcon()
         )
+
+        if (result == 0) {
+            com.intellij.openapi.options.ShowSettingsUtil.getInstance()
+                .showSettingsDialog(project, "Smart Commit")
+        }
     }
 
     /**
