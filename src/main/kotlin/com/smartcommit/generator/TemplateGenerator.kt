@@ -1,5 +1,6 @@
 package com.smartcommit.generator
 
+import com.smartcommit.branch.BranchContext
 import com.smartcommit.convention.CommitConvention
 import com.smartcommit.diff.ScopeDetector
 import com.smartcommit.diff.model.ChangeCategory
@@ -19,16 +20,20 @@ import com.smartcommit.generator.model.GeneratedCommitMessage
  * through [CommitConvention.format] to apply convention-specific formatting
  * (e.g. Gitmoji emoji prefix, Conventional Commits type prefix).
  *
- * @param titleTemplate  Template for the subject line.
- * @param bodyTemplate   Template for the message body (optional section).
- * @param maxTitleLength Maximum characters for the title (default 72).
- * @param convention     Optional commit convention to apply to the output.
+ * @param titleTemplate   Template for the subject line.
+ * @param bodyTemplate    Template for the message body (optional section).
+ * @param maxTitleLength  Maximum characters for the title (default 72).
+ * @param convention      Optional commit convention to apply to the output.
+ * @param branchContext   Parsed branch context for Smart Branch integration.
+ * @param ticketInFooter  Whether ticket goes in footer (true) or title suffix (false).
  */
 class TemplateGenerator(
     private val titleTemplate: String = DEFAULT_TITLE_TEMPLATE,
     private val bodyTemplate: String = DEFAULT_BODY_TEMPLATE,
     private val maxTitleLength: Int = 72,
-    private val convention: CommitConvention? = null
+    private val convention: CommitConvention? = null,
+    private val branchContext: BranchContext = BranchContext.EMPTY,
+    private val ticketInFooter: Boolean = true
 ) : CommitMessageGenerator {
 
     override val displayName: String = "Template"
@@ -50,6 +55,25 @@ class TemplateGenerator(
         if (convention != null) {
             val scope = variables["scope"]?.ifEmpty { null }
             message = convention.format(message, summary.dominantCategory, scope)
+        }
+
+        // Apply ticket from branch context
+        if (branchContext.hasTicket) {
+            if (ticketInFooter) {
+                // Append ticket to footer: "Refs: JIRA-142"
+                val ticketFooter = branchContext.footerLine!!
+                val existingFooter = message.footer
+                message = message.copy(
+                    footer = if (existingFooter.isNullOrBlank()) ticketFooter
+                             else "$existingFooter\n$ticketFooter"
+                )
+            } else {
+                // Append ticket to title: "... (JIRA-142)"
+                val suffix = branchContext.titleTicketSuffix!!
+                if (!message.title.contains(suffix, ignoreCase = false)) {
+                    message = message.copy(title = "${message.title} $suffix")
+                }
+            }
         }
 
         return message.withTruncatedTitle(maxTitleLength)
@@ -75,6 +99,11 @@ class TemplateGenerator(
      * | `deleted_files`  | `src/Legacy.kt`                      |
      * | `moved_files`    | `OldName.kt → NewName.kt`            |
      * | `body_lines`     | Multi-line breakdown by category      |
+     * | `ticket`         | `JIRA-142` (from branch, or empty)     |
+     * | `branch`         | `feature/JIRA-142-add-payment-api`     |
+     * | `branch_type`    | `feat` (normalized, or empty)          |
+     * | `branch_scope`   | `payment` (from branch, or empty)      |
+     * | `branch_desc`    | `add payment API` (humanized, or empty)|
      */
     internal fun buildVariableMap(summary: DiffSummary): Map<String, String> {
         val vars = mutableMapOf<String, String>()
@@ -82,8 +111,22 @@ class TemplateGenerator(
         // Core fields
         val category = summary.dominantCategory
         vars["type"] = category.label
-        vars["scope"] = ScopeDetector.detect(summary)
+
+        // Scope: branch scope overrides file-path detection
+        vars["scope"] = if (branchContext.hasScope) {
+            branchContext.scope!!
+        } else {
+            ScopeDetector.detect(summary)
+        }
+
         vars["summary"] = inferSummary(summary)
+
+        // Branch context variables
+        vars["ticket"] = branchContext.ticket ?: ""
+        vars["branch"] = branchContext.rawBranchName
+        vars["branch_type"] = branchContext.type ?: ""
+        vars["branch_scope"] = branchContext.scope ?: ""
+        vars["branch_desc"] = branchContext.description ?: ""
 
         // File stats
         vars["files_changed"] = summary.totalFiles.toString()

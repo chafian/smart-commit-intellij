@@ -98,6 +98,20 @@ class SmartCommitSettings : PersistentStateComponent<SmartCommitSettings.Setting
         get() = state.cloudBaseUrl
         set(value) { state.cloudBaseUrl = value }
 
+    // ── Smart Branch settings ───────────────────────────────
+
+    var smartBranch: Boolean
+        get() = state.smartBranch
+        set(value) { state.smartBranch = value }
+
+    var smartBranchPattern: String
+        get() = state.smartBranchPattern
+        set(value) { state.smartBranchPattern = value }
+
+    var smartBranchTicketInFooter: Boolean
+        get() = state.smartBranchTicketInFooter
+        set(value) { state.smartBranchTicketInFooter = value }
+
     // ── State data class ────────────────────────────────────
 
     /**
@@ -121,7 +135,10 @@ class SmartCommitSettings : PersistentStateComponent<SmartCommitSettings.Setting
         var customSystemPrompt: String = "",
         var customTitleTemplate: String = "",
         var customBodyTemplate: String = "",
-        var cloudBaseUrl: String = "https://api.smartcommit.dev"
+        var cloudBaseUrl: String = "https://api.smartcommit.dev",
+        var smartBranch: Boolean = true,
+        var smartBranchPattern: String = "",
+        var smartBranchTicketInFooter: Boolean = true
     )
 
     companion object {

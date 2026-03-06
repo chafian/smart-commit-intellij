@@ -1,5 +1,6 @@
 package com.smartcommit.ai
 
+import com.smartcommit.branch.BranchContext
 import com.smartcommit.diff.model.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -160,5 +161,77 @@ class PromptBuilderTest {
         val prompt = builder.buildUserPrompt(s)
         assertTrue(prompt.contains("New files: 1"))
         assertTrue(prompt.contains("Deleted files: 1"))
+    }
+
+    // ── Branch context in prompts ───────────────────────────
+
+    @Test
+    fun `user prompt contains branch context section when branch has useful info`() {
+        val branch = BranchContext(
+            rawBranchName = "feature/JIRA-142-add-payment-api",
+            type = "feat",
+            ticket = "JIRA-142",
+            scope = "payment",
+            description = "add payment API",
+            isDefault = false
+        )
+        val pb = PromptBuilder(branchContext = branch)
+        val s = summary(fileDiff("src/Payment.kt"))
+        val prompt = pb.buildUserPrompt(s)
+        assertTrue(prompt.contains("## Branch Context:"))
+        assertTrue(prompt.contains("Branch: feature/JIRA-142-add-payment-api"))
+        assertTrue(prompt.contains("Type: feat"))
+        assertTrue(prompt.contains("Scope: payment"))
+        assertTrue(prompt.contains("Ticket: JIRA-142"))
+        assertTrue(prompt.contains("Description: add payment API"))
+    }
+
+    @Test
+    fun `user prompt omits branch context section for EMPTY branch`() {
+        val pb = PromptBuilder(branchContext = BranchContext.EMPTY)
+        val s = summary(fileDiff("src/Foo.kt"))
+        val prompt = pb.buildUserPrompt(s)
+        assertFalse(prompt.contains("## Branch Context:"))
+    }
+
+    @Test
+    fun `system prompt contains footer ticket instruction when ticketInFooter is true`() {
+        val branch = BranchContext(
+            rawBranchName = "feature/JIRA-142-add-api",
+            type = "feat", ticket = "JIRA-142",
+            scope = null, description = "add API", isDefault = false
+        )
+        val pb = PromptBuilder(branchContext = branch, ticketInFooter = true)
+        val prompt = pb.buildSystemPrompt()
+        assertTrue(prompt.contains("Refs: JIRA-142"))
+        assertTrue(prompt.contains("footer"))
+        assertTrue(prompt.contains("Do NOT include the ticket ID in the title"))
+    }
+
+    @Test
+    fun `system prompt contains title ticket instruction when ticketInFooter is false`() {
+        val branch = BranchContext(
+            rawBranchName = "fix/142-bug",
+            type = "fix", ticket = "#142",
+            scope = null, description = "bug", isDefault = false
+        )
+        val pb = PromptBuilder(branchContext = branch, ticketInFooter = false)
+        val prompt = pb.buildSystemPrompt()
+        assertTrue(prompt.contains("(#142)"))
+        assertTrue(prompt.contains("title"))
+        assertTrue(prompt.contains("Do NOT include it in the footer"))
+    }
+
+    @Test
+    fun `system prompt has no ticket instruction when branch has no ticket`() {
+        val branch = BranchContext(
+            rawBranchName = "feat/add-login",
+            type = "feat", ticket = null,
+            scope = null, description = "add login", isDefault = false
+        )
+        val pb = PromptBuilder(branchContext = branch)
+        val prompt = pb.buildSystemPrompt()
+        assertFalse(prompt.contains("Refs:"))
+        assertFalse(prompt.contains("ticket"))
     }
 }

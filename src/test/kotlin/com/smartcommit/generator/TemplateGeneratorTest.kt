@@ -1,5 +1,6 @@
 package com.smartcommit.generator
 
+import com.smartcommit.branch.BranchContext
 import com.smartcommit.diff.model.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -233,5 +234,112 @@ class TemplateGeneratorTest {
     @Test
     fun `displayName returns Template`() {
         assertEquals("Template", generator.displayName)
+    }
+
+    // ── Branch context variables ────────────────────────────
+
+    @Test
+    fun `buildVariableMap contains branch context keys`() {
+        val branch = BranchContext(
+            rawBranchName = "feature/JIRA-142-add-payment-api",
+            type = "feat", ticket = "JIRA-142",
+            scope = "payment", description = "add payment API",
+            isDefault = false
+        )
+        val gen = TemplateGenerator(branchContext = branch)
+        val fd = fileDiff("src/Payment.kt")
+        val vars = gen.buildVariableMap(summary(fd))
+
+        assertEquals("JIRA-142", vars["ticket"])
+        assertEquals("feature/JIRA-142-add-payment-api", vars["branch"])
+        assertEquals("feat", vars["branch_type"])
+        assertEquals("payment", vars["branch_scope"])
+        assertEquals("add payment API", vars["branch_desc"])
+    }
+
+    @Test
+    fun `buildVariableMap branch scope overrides file-path scope`() {
+        val branch = BranchContext(
+            rawBranchName = "feature/payment/add-api",
+            type = "feat", ticket = null,
+            scope = "payment", description = "add API",
+            isDefault = false
+        )
+        val gen = TemplateGenerator(branchContext = branch)
+        // Files are in "auth" directory, but branch says "payment"
+        val fd = fileDiff("src/auth/Service.kt")
+        val vars = gen.buildVariableMap(summary(fd))
+        assertEquals("payment", vars["scope"])
+    }
+
+    @Test
+    fun `buildVariableMap uses file-path scope when branch has no scope`() {
+        val branch = BranchContext(
+            rawBranchName = "feat/add-login",
+            type = "feat", ticket = null,
+            scope = null, description = "add login",
+            isDefault = false
+        )
+        val gen = TemplateGenerator(branchContext = branch)
+        val fd1 = fileDiff("src/auth/Login.kt")
+        val fd2 = fileDiff("src/auth/Session.kt")
+        val vars = gen.buildVariableMap(summary(fd1, fd2))
+        assertEquals("auth", vars["scope"])
+    }
+
+    @Test
+    fun `generate appends ticket to footer when ticketInFooter is true`() {
+        val branch = BranchContext(
+            rawBranchName = "feature/JIRA-142-add-api",
+            type = "feat", ticket = "JIRA-142",
+            scope = null, description = "add API",
+            isDefault = false
+        )
+        val gen = TemplateGenerator(branchContext = branch, ticketInFooter = true)
+        val fd = fileDiff("src/Api.kt", ChangeType.NEW)
+        val result = gen.generate(summary(fd))
+        assertNotNull(result.footer)
+        assertEquals("Refs: JIRA-142", result.footer)
+    }
+
+    @Test
+    fun `generate appends ticket to title when ticketInFooter is false`() {
+        val branch = BranchContext(
+            rawBranchName = "fix/142-bug",
+            type = "fix", ticket = "#142",
+            scope = null, description = "bug",
+            isDefault = false
+        )
+        val gen = TemplateGenerator(branchContext = branch, ticketInFooter = false)
+        val fd = fileDiff("src/Bug.kt")
+        val result = gen.generate(summary(fd))
+        assertTrue("Title should contain (#142): ${result.title}", result.title.contains("(#142)"))
+        assertNull(result.footer)
+    }
+
+    @Test
+    fun `generate does not modify message when no ticket`() {
+        val branch = BranchContext(
+            rawBranchName = "feat/add-login",
+            type = "feat", ticket = null,
+            scope = null, description = "add login",
+            isDefault = false
+        )
+        val gen = TemplateGenerator(branchContext = branch)
+        val fd = fileDiff("src/Login.kt", ChangeType.NEW)
+        val result = gen.generate(summary(fd))
+        assertNull(result.footer)
+    }
+
+    @Test
+    fun `generate with EMPTY branch context has no footer and empty branch vars`() {
+        val gen = TemplateGenerator(branchContext = BranchContext.EMPTY)
+        val fd = fileDiff("src/Foo.kt")
+        val vars = gen.buildVariableMap(summary(fd))
+        assertEquals("", vars["ticket"])
+        assertEquals("", vars["branch"])
+        assertEquals("", vars["branch_type"])
+        assertEquals("", vars["branch_scope"])
+        assertEquals("", vars["branch_desc"])
     }
 }

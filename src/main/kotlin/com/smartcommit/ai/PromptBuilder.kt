@@ -1,5 +1,6 @@
 package com.smartcommit.ai
 
+import com.smartcommit.branch.BranchContext
 import com.smartcommit.diff.DiffUtils
 import com.smartcommit.diff.model.DiffSummary
 
@@ -21,6 +22,8 @@ import com.smartcommit.diff.model.DiffSummary
  * @param maxFiles       Maximum number of files to list individually in the prompt.
  * @param maxTotalChars  Hard character cap for the entire user prompt.
  * @param conventionHint Optional convention instructions appended to the system prompt.
+ * @param branchContext  Parsed branch context for Smart Branch integration.
+ * @param ticketInFooter Whether ticket goes in footer (true) or title suffix (false).
  */
 class PromptBuilder(
     private val maxDiffTokens: Int = 4000,
@@ -30,7 +33,9 @@ class PromptBuilder(
     private val oneLineOnly: Boolean = false,
     private val languageHint: String = "",
     private val customSystemPrompt: String = "",
-    private val maxSubjectLength: Int = 72
+    private val maxSubjectLength: Int = 72,
+    private val branchContext: BranchContext = BranchContext.EMPTY,
+    private val ticketInFooter: Boolean = true
 ) {
 
     /** Format the output format template with the user's max subject length. */
@@ -54,6 +59,19 @@ class PromptBuilder(
         if (oneLineOnly) {
             append("\n\n")
             append(oneLineHint())
+        }
+        // Branch context — ticket placement instruction
+        if (branchContext.hasTicket) {
+            append("\n\n")
+            if (ticketInFooter) {
+                append("IMPORTANT: The branch references ticket ${branchContext.ticket}. ")
+                append("Include it in the footer as \"Refs: ${branchContext.ticket}\". ")
+                append("Do NOT include the ticket ID in the title line.")
+            } else {
+                append("IMPORTANT: The branch references ticket ${branchContext.ticket}. ")
+                append("Append it to the end of the title in parentheses, e.g. \"... (${branchContext.ticket})\". ")
+                append("Do NOT include it in the footer.")
+            }
         }
         if (conventionHint.isNotBlank()) {
             append("\n\n")
@@ -112,6 +130,17 @@ class PromptBuilder(
 
         // Section 3: Dominant category hint
         append("## Detected change category: ${summary.dominantCategory.label}\n\n")
+
+        // Section 3.5: Branch context (if available)
+        if (branchContext.hasUsefulInfo) {
+            append("## Branch Context:\n")
+            append("Branch: ${branchContext.rawBranchName}\n")
+            if (branchContext.hasType) append("Type: ${branchContext.type}\n")
+            if (branchContext.hasScope) append("Scope: ${branchContext.scope}\n")
+            if (branchContext.hasTicket) append("Ticket: ${branchContext.ticket}\n")
+            if (branchContext.description != null) append("Description: ${branchContext.description}\n")
+            append("\n")
+        }
 
         // Section 4: Truncated diffs (only for the files we listed)
         val diffText = DiffUtils.truncateDiffs(filesToShow, maxDiffTokens)

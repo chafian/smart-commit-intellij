@@ -5,6 +5,31 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-06
+
+### Added
+- **Smart Branch Integration** — Automatically extracts context from Git branch names to enrich generated commit messages. Connects Branch → Commit → Issue tracker seamlessly.
+- **Branch name parser** — Auto-detects common branching conventions: `feature/JIRA-142-add-payment-api` → type=`feat`, ticket=`JIRA-142`, description=`add payment API`. Supports Jira, GitHub/GitLab bare numbers, Linear, and nested branch structures.
+- **Type normalization** — Branch prefixes normalized to commit types: `feature`→`feat`, `bugfix`→`fix`, `hotfix`→`fix`, and 10 other standard types.
+- **Smart humanization** — Branch slugs converted to readable descriptions with 40+ known acronyms preserved: `add-payment-api` → `add payment API`, `fix-oauth-redirect` → `fix OAuth redirect`.
+- **Scope extraction** — First non-verb word after type becomes the commit scope: `feature/payment-add-api` → scope=`payment`. Nested branches also supported: `feature/payment/JIRA-142-add-api`.
+- **Ticket placement options** — Ticket references appear in footer by default (`Refs: JIRA-142`) with a setting to place them in the title instead (`(JIRA-142)`).
+- **Custom regex support** — Optional custom regex with named groups (`(?<type>...)`, `(?<ticket>...)`, `(?<scope>...)`, `(?<description>...)`) for non-standard branch naming.
+- **Smart Branch settings** — Three new settings: enable/disable toggle (default: on), custom regex pattern, and ticket placement (footer vs title).
+- **Branch context caching** — Parsed results cached in `ConcurrentHashMap` since branch names rarely change mid-session.
+
+### Changed
+- `PromptBuilder` now includes branch context (type, scope, ticket, description) in both system and user prompts for AI-powered generation.
+- `TemplateGenerator` now uses branch-derived scope (overriding file-path detection) and handles ticket injection in footer or title.
+- `CommitMessageService` resolves branch context via Git4Idea API and threads it through the entire generation pipeline.
+- Settings UI gains a "Smart Branch" section between General and Cloud sections.
+
+### Technical Details
+- 73 new tests across `BranchNameParserTest` (60), `PromptBuilderTest` (5), and `TemplateGeneratorTest` (8).
+- Total test count: 368 (up from 295).
+- New package: `com.smartcommit.branch` with `BranchContext`, `BranchNameParser`, and `BranchUtils`.
+- Depends on `Git4Idea` (already declared) for `GitRepositoryManager` branch name retrieval.
+
 ## [1.2.2] - 2026-03-05
 
 ### Added
@@ -94,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
+[1.3.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.3.0
 [1.2.2]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.2
 [1.2.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.1
 [1.2.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.0

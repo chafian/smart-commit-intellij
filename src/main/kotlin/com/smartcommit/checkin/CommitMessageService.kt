@@ -10,6 +10,9 @@ import com.smartcommit.ai.CloudProvider
 import com.smartcommit.ai.OllamaProvider
 import com.smartcommit.ai.OpenAiProvider
 import com.smartcommit.ai.PromptBuilder
+import com.smartcommit.branch.BranchContext
+import com.smartcommit.branch.BranchNameParser
+import com.smartcommit.branch.BranchUtils
 import com.smartcommit.convention.CommitConvention
 import com.smartcommit.diff.DiffAnalyzerImpl
 import com.smartcommit.generator.CommitMessageGenerator
@@ -57,7 +60,6 @@ object CommitMessageService {
      * @throws CloudUsageException if Cloud provider quota is exhausted or subscription inactive.
      * @throws CloudNotConnectedException if Cloud provider is selected but user is not connected.
      */
-    @Suppress("UNUSED_PARAMETER") // project kept for future PasswordSafe per-project scope
     fun generate(
         project: Project,
         changes: List<Change>,
@@ -75,10 +77,19 @@ object CommitMessageService {
             return GeneratedCommitMessage.titleOnly("Update code")
         }
 
+        // Step 1.5: Resolve branch context (Smart Branch integration)
+        val branchContext = if (settings.smartBranch) {
+            val branchName = BranchUtils.getCurrentBranchName(project)
+            if (branchName != null) {
+                val customPattern = settings.smartBranchPattern.ifBlank { null }
+                BranchNameParser.parse(branchName, customPattern)
+            } else BranchContext.EMPTY
+        } else BranchContext.EMPTY
+
         // Step 2: Build the generator based on settings
         indicator?.text = "Generating commit message..."
         val convention = settings.convention.createConvention()
-        val generator = createGenerator(settings, convention)
+        val generator = createGenerator(settings, convention, branchContext)
 
         // Step 3: Generate
         // For Cloud provider, this call goes through CloudProvider.complete()
@@ -116,8 +127,10 @@ object CommitMessageService {
 
     private fun createGenerator(
         settings: SmartCommitSettings,
-        convention: CommitConvention
+        convention: CommitConvention,
+        branchContext: BranchContext = BranchContext.EMPTY
     ): CommitMessageGenerator {
+        val ticketInFooter = settings.smartBranchTicketInFooter
         return when (settings.generatorMode) {
             GeneratorMode.TEMPLATE -> {
                 val titleTpl = settings.customTitleTemplate.ifBlank { null }
@@ -126,7 +139,9 @@ object CommitMessageService {
                     titleTemplate = titleTpl ?: TemplateGenerator.DEFAULT_TITLE_TEMPLATE,
                     bodyTemplate = bodyTpl ?: TemplateGenerator.DEFAULT_BODY_TEMPLATE,
                     maxTitleLength = settings.maxSubjectLength,
-                    convention = convention
+                    convention = convention,
+                    branchContext = branchContext,
+                    ticketInFooter = ticketInFooter
                 )
             }
             GeneratorMode.AI -> {
@@ -140,7 +155,9 @@ object CommitMessageService {
                     oneLineOnly = settings.commitStyle == CommitStyle.ONE_LINE,
                     languageHint = languageHint,
                     customSystemPrompt = settings.customSystemPrompt,
-                    maxSubjectLength = settings.maxSubjectLength
+                    maxSubjectLength = settings.maxSubjectLength,
+                    branchContext = branchContext,
+                    ticketInFooter = ticketInFooter
                 )
                 val titleTpl = settings.customTitleTemplate.ifBlank { null }
                 val bodyTpl = settings.customBodyTemplate.ifBlank { null }
@@ -148,7 +165,9 @@ object CommitMessageService {
                     titleTemplate = titleTpl ?: TemplateGenerator.DEFAULT_TITLE_TEMPLATE,
                     bodyTemplate = bodyTpl ?: TemplateGenerator.DEFAULT_BODY_TEMPLATE,
                     maxTitleLength = settings.maxSubjectLength,
-                    convention = convention
+                    convention = convention,
+                    branchContext = branchContext,
+                    ticketInFooter = ticketInFooter
                 )
                 AiCommitMessageGenerator(
                     provider = provider,

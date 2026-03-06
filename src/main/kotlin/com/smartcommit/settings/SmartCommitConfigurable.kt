@@ -124,6 +124,27 @@ class SmartCommitConfigurable : BoundConfigurable("Smart Commit") {
             }
         }
 
+        // ── Smart Branch ────────────────────────────────────
+        group("Smart Branch") {
+            row {
+                checkBox("Include branch context in commit messages")
+                    .bindSelected(settings::smartBranch)
+                    .comment("Extracts type, ticket ID, and scope from your branch name to enrich generated commits")
+            }
+            row {
+                checkBox("Include ticket reference in commit footer")
+                    .bindSelected(settings::smartBranchTicketInFooter)
+                    .comment("ON: footer line \"Refs: JIRA-142\" — OFF: appended to title \"feat(payment): add API (JIRA-142)\"")
+            }
+            row("Custom Branch Pattern:") {
+                textField()
+                    .bindText(settings::smartBranchPattern)
+                    .comment("Optional regex with named groups: (?<type>...) (?<ticket>...) (?<scope>...) (?<description>...). Leave blank for auto-detection.")
+                    .resizableColumn()
+                    .align(Align.FILL)
+            }
+        }
+
         // ── Smart Commit Cloud (always visible, hero section) ──
         group("Smart Commit Cloud") {
             // Tagline
