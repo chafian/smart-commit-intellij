@@ -196,13 +196,15 @@ object BranchNameParser {
             descSlug = segment
         }
 
-        // Try to extract scope from description if no ticket was found
-        // and no scope was already set by the caller (nested branch)
-        if (descSlug != null && ticket == null) {
+        // Try to extract scope from description slug.
+        // The first word becomes the scope IF it's not a verb and not an acronym.
+        // Acronyms (api, oauth, jwt, etc.) are topic words, not component scopes.
+        // This works both with and without a ticket prefix.
+        if (descSlug != null) {
             val words = splitSlug(descSlug)
             if (words.size >= 2) {
                 val firstWord = words[0].lowercase()
-                if (firstWord !in VERB_WORDS && firstWord.length > 1) {
+                if (firstWord !in VERB_WORDS && firstWord !in UPPERCASE_WORDS && firstWord.length > 1) {
                     scope = firstWord
                     descSlug = words.drop(1).joinToString("-")
                 }

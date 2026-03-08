@@ -81,25 +81,31 @@ class GitmojiConvention : CommitConvention {
 
         internal const val PROMPT_HINT = """Convention: Gitmoji
 - Start the title with EXACTLY ONE gitmoji emoji followed by a space.
-- Gitmoji mapping:
-  ✨ new feature
-  🐛 bug fix
+- Gitmoji-to-type mapping (use the emoji that matches the commit type):
+  ✨ feat (new feature)
+  🐛 fix (bug fix)
   ♻️  refactor
-  ✅ tests
-  📝 documentation
-  🎨 style/formatting
-  📦 build/dependencies
-  👷 CI/CD
-  🔧 chore/config
+  ✅ test
+  📝 docs (documentation)
+  🎨 style (formatting)
+  📦 build (dependencies)
+  👷 ci (CI/CD)
+  🔧 chore (config)
   🔥 remove code/files
   🚀 deploy/release
   ⬆️  upgrade dependencies
   ⬇️  downgrade dependencies
   🔒 security fix
   💄 UI/cosmetic changes
-- Do NOT include a type prefix like "feat:" after the emoji.
-- Example: "✨ Add user authentication flow"
-- Example: "🐛 Fix null pointer in payment processing"
-- The emoji IS the type indicator — no additional prefix needed."""
+  ⚡ perf (performance)
+- When branch context provides a type AND scope, format the title as: <emoji> <type>(<scope>): <description>
+  Example: "✨ feat(payment): add payment API integration"
+  Example: "🐛 fix(auth): resolve OAuth redirect loop"
+- When branch context provides a type but NO scope, format as: <emoji> <type>: <description>
+  Example: "✨ feat: add user authentication flow"
+- When NO branch context is available, use just: <emoji> <description>
+  Example: "✨ Add user authentication flow"
+  Example: "🐛 Fix null pointer in payment processing"
+- ALWAYS pick the emoji that matches the branch type if available. Do NOT guess a different type."""
     }
 }

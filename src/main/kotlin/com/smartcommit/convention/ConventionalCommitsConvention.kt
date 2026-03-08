@@ -111,13 +111,15 @@ class ConventionalCommitsConvention : CommitConvention {
 
         internal const val PROMPT_HINT = """Convention: Conventional Commits (https://www.conventionalcommits.org/)
 - Title MUST follow the format: <type>[optional scope]: <description>
-- Types: feat, fix, refactor, test, docs, style, build, ci, chore
-- Scope is optional, in parentheses: feat(auth): add login
+- Types: feat, fix, refactor, test, docs, style, build, ci, chore, perf
+- When branch context provides a scope, ALWAYS include it: feat(payment): add API
+- When branch context provides a type, ALWAYS use it as the commit type.
 - Description starts with lowercase letter, imperative mood.
 - Do NOT include emoji.
 - Examples:
+  feat(payment): add payment API integration
+  fix(auth): resolve OAuth redirect loop
   feat: add user authentication flow
-  fix(payment): resolve null pointer in checkout
   refactor(auth): extract validation logic to separate class
   docs: update API documentation
   chore: update dependencies

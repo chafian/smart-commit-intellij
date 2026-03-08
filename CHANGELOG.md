@@ -5,6 +5,21 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-03-08
+
+### Fixed
+- **Prompt quality overhaul** — Commit messages now follow professional conventions with proper `type(scope): description` format when branch context is available.
+- **AI scope inference** — When parser can't extract scope (verb-first branches like `add-payment-api`), the AI now infers scope from branch description (e.g. produces `feat(payment):`).
+- **No more filler sentences** — AI no longer starts body with "This change introduces..." or similar padding. Body starts directly with the explanation.
+- **Single-topic titles** — Title describes one primary change only. Secondary changes move to body.
+- **Structured body format** — Bullet lists prefixed with "Changes:" heading, short and direct items.
+
+### Changed
+- Gitmoji convention now produces `emoji type(scope): description` format when branch context provides type and scope (e.g. `✨ feat(payment): add payment API integration`).
+- Conventional Commits convention updated to always use branch-provided type and scope when available.
+- Scope extraction excludes known acronyms (API, OAuth, JWT, etc.) — these are topic words, not component scopes.
+- Title max length guidance tightened for more concise subjects.
+
 ## [1.3.0] - 2026-03-06
 
 ### Added
@@ -119,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
+[1.3.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.3.1
 [1.3.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.3.0
 [1.2.2]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.2
 [1.2.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.2.1

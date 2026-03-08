@@ -60,17 +60,27 @@ class PromptBuilder(
             append("\n\n")
             append(oneLineHint())
         }
-        // Branch context — ticket placement instruction
-        if (branchContext.hasTicket) {
+        // Branch context — scope, type, and ticket instructions
+        if (branchContext.hasUsefulInfo) {
             append("\n\n")
-            if (ticketInFooter) {
-                append("IMPORTANT: The branch references ticket ${branchContext.ticket}. ")
-                append("Include it in the footer as \"Refs: ${branchContext.ticket}\". ")
-                append("Do NOT include the ticket ID in the title line.")
-            } else {
-                append("IMPORTANT: The branch references ticket ${branchContext.ticket}. ")
-                append("Append it to the end of the title in parentheses, e.g. \"... (${branchContext.ticket})\". ")
-                append("Do NOT include it in the footer.")
+            append("BRANCH CONTEXT RULES (IMPORTANT — follow these precisely):\n")
+            if (branchContext.hasType) {
+                append("- The branch type is \"${branchContext.type}\". Use this as the commit type.\n")
+            }
+            if (branchContext.hasScope) {
+                append("- The branch scope is \"${branchContext.scope}\". Include it in the title as the scope component, e.g. ${branchContext.type ?: "feat"}(${branchContext.scope}): ...\n")
+            } else if (branchContext.description != null) {
+                append("- No explicit scope was detected. Infer the most likely component/module scope from the branch description and include it in the title, e.g. feat(inferred-scope): ...\n")
+            }
+            if (branchContext.hasTicket) {
+                if (ticketInFooter) {
+                    append("- The branch references ticket ${branchContext.ticket}. Include it in the footer as \"Refs: ${branchContext.ticket}\". Do NOT include the ticket ID in the title.\n")
+                } else {
+                    append("- The branch references ticket ${branchContext.ticket}. Append it to the end of the title in parentheses: \"... (${branchContext.ticket})\". Do NOT include it in the footer.\n")
+                }
+            }
+            if (branchContext.description != null) {
+                append("- The branch description is \"${branchContext.description}\". Use it to guide the title wording.\n")
             }
         }
         if (conventionHint.isNotBlank()) {
@@ -187,12 +197,17 @@ Put all the important information in the "title" field. Keep it concise and unde
 
         internal const val STYLE_RULES_TEMPLATE = """Commit message style rules:
 - Title: use imperative mood ("Add feature" not "Added feature").
-- Title: max %d characters. Be specific about WHAT changed.
+- Title: max %d characters. Be concise and specific about the PRIMARY change.
+- Title: describe ONE primary change only. Move secondary changes to the body.
 - Title: do NOT include file paths.
+- Title: do NOT combine multiple topics with "and" (e.g. "Add X and update Y" is bad).
 - Title: do NOT start with a category prefix unless convention rules say otherwise.
+- Body: NEVER start with filler phrases like "This change introduces", "This update adds", "This commit", "This PR". Start directly with the explanation.
 - Body: explain WHY the change was made, not WHAT (the diff shows what).
 - Body: wrap lines at 72 characters.
-- Body: use bullet points for multiple reasons.
+- Body: use bullet points prefixed with "- " for listing changes (lowercase start).
+- Body: prefix bullet lists with "Changes:" on its own line when listing modifications.
+- Body: keep bullet points short and direct (max 8-10 words each).
 - If the change is trivial (typo fix, formatting), body should be null.
 - Analyze the FULL diff to understand the intent, not just file names."""
     }

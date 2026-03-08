@@ -498,6 +498,9 @@ class BranchNameParserTest {
         val ctx = BranchNameParser.parse("feature/JIRA-142-add-payment-api")
         assertEquals("feat", ctx.type)
         assertEquals("JIRA-142", ctx.ticket)
+        // scope not extracted because first description word "add" is a verb
+        // AI infers scope from the description instead
+        assertNull(ctx.scope)
         assertFalse(ctx.isDefault)
         assertTrue(ctx.hasUsefulInfo)
         assertEquals("Refs: JIRA-142", ctx.footerLine)
