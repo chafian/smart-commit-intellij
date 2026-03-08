@@ -60,22 +60,24 @@ open class CloudProvider(
     override fun complete(systemPrompt: String, userPrompt: String): Result<String> {
         lastUsageInfo = null
 
-        val accessToken = CloudAuthManager.getAccessToken()
+        // Step 1: Get a valid access token (proactive refresh if expired)
+        val accessToken = CloudAuthManager.getValidAccessToken(baseUrl)
         if (accessToken == null) {
-            log.warn("SmartCommit Cloud: no access token found — not connected")
-            throw CloudNotConnectedException()
+            log.warn("SmartCommit Cloud: no valid access token — not connected or refresh failed")
+            throw CloudNotConnectedException("Not connected to Smart Commit Cloud. Please reconnect your IDE in Settings > Tools > Smart Commit.")
         }
 
-        // First attempt
+        // Step 2: Call generate with the (hopefully valid) token
         log.info("SmartCommit Cloud: calling /api/cloud/generate...")
         var result = callGenerate(accessToken, systemPrompt, userPrompt)
 
-        // Handle 401: refresh token and retry once
+        // Step 3: Handle 401 — token might have been invalidated server-side
         if (result.isUnauthorized) {
             log.info("SmartCommit Cloud: got 401, attempting token refresh...")
             val newToken = CloudAuthManager.refreshTokens(baseUrl)
             if (newToken == null) {
                 log.warn("SmartCommit Cloud: token refresh failed — session expired")
+                CloudAuthManager.clearTokens()
                 throw CloudNotConnectedException("Session expired. Please reconnect your IDE in Settings > Tools > Smart Commit.")
             }
             log.info("SmartCommit Cloud: token refreshed, retrying generate...")
@@ -95,12 +97,14 @@ open class CloudProvider(
 
         // Handle non-200 HTTP errors
         if (result.httpError != null) {
-            return Result.failure(RuntimeException("Server error: ${result.httpError}"))
+            log.warn("SmartCommit Cloud: server error — ${result.httpError}")
+            return Result.failure(RuntimeException("Cloud server error: ${result.httpError}"))
         }
 
-        // Handle network errors
+        // Handle network errors — throw so caller shows error, don't silently fallback
         if (result.networkError != null) {
-            return Result.failure(RuntimeException("Network error: ${result.networkError}"))
+            log.warn("SmartCommit Cloud: network error — ${result.networkError}")
+            return Result.failure(RuntimeException("Cloud network error: ${result.networkError}. Check your internet connection."))
         }
 
         // Parse the structured response
