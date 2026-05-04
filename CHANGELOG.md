@@ -5,6 +5,12 @@ All notable changes to the **Smart Commit** plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-03-08
+
+### Fixed
+- **Gitmoji on default branches** — Default branches like `master` and `main` no longer generate Conventional Commit prefixes such as `feat:` when Smart Branch context is absent.
+- Added explicit no-branch-context prompt rules so Gitmoji output uses only `<emoji> <description>` on default branches.
+
 ## [1.3.2] - 2026-03-08
 
 ### Fixed
@@ -146,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON: kotlinx-serialization-json 1.6.3
 - Testing: JUnit 4, MockK 1.13.9, OkHttp MockWebServer
 
+[1.3.3]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.3.3
 [1.3.2]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.3.2
 [1.3.1]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.3.1
 [1.3.0]: https://github.com/chafian/smart-commit-intellij/releases/tag/v1.3.0

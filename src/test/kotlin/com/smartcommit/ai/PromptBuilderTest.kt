@@ -234,4 +234,15 @@ class PromptBuilderTest {
         assertFalse(prompt.contains("Refs:"))
         assertFalse(prompt.contains("ticket"))
     }
+
+    @Test
+    fun `system prompt forbids gitmoji type prefix when branch context is absent`() {
+        val pb = PromptBuilder(
+            branchContext = BranchContext.EMPTY,
+            conventionHint = com.smartcommit.convention.GitmojiConvention.PROMPT_HINT
+        )
+        val prompt = pb.buildSystemPrompt()
+        assertTrue(prompt.contains("NO BRANCH CONTEXT RULES"))
+        assertTrue(prompt.contains("Do NOT include Conventional Commit prefixes like feat:, fix:, docs:, chore:, refactor:, or type(scope): when branch context is absent"))
+    }
 }

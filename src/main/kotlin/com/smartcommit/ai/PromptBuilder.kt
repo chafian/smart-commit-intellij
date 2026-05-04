@@ -82,6 +82,12 @@ class PromptBuilder(
             if (branchContext.description != null) {
                 append("- The branch description is \"${branchContext.description}\". Use it to guide the title wording.\n")
             }
+        } else if (conventionHint.contains("Convention: Gitmoji")) {
+            append("\n\n")
+            append("NO BRANCH CONTEXT RULES (IMPORTANT):\n")
+            append("- This commit comes from a default branch or has no useful branch metadata.\n")
+            append("- For Gitmoji, use ONLY: <emoji> <description>.\n")
+            append("- Do NOT include Conventional Commit prefixes like feat:, fix:, docs:, chore:, refactor:, or type(scope): when branch context is absent.\n")
         }
         if (conventionHint.isNotBlank()) {
             append("\n\n")
